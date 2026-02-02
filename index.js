@@ -8,7 +8,7 @@ function renderGameContainer() {
     </div>
     <div class="card-container"></div>
     <button class="reset-btn">Reset The Game</button>
-    <p class="win-message">You win the game</p>
+    <p class="win-message"></p>
   `;
 }
 renderGameContainer();
@@ -16,6 +16,8 @@ renderGameContainer();
 //-- initial game values
 const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
 let cards = [...letters, ...letters];
+let firstCard = null;
+let secondCard = null;
 
 //-- making spaghetti of cards
 function shuffleCards(array) {
@@ -43,5 +45,19 @@ function createCards() {
     `;
     cardContainer.appendChild(card);
   });
+  addCardClickListeners();
 }
 createCards();
+
+//-- defining click for cards
+function addCardClickListeners() {
+  const gameCards = document.querySelectorAll(".card");
+  gameCards.forEach((card) => {
+    card.addEventListener("click", () => handleCardClick(card));
+  });
+}
+
+//-- handling click for cards
+function handleCardClick(card) {
+  card.classList.toggle("flipped");
+}
