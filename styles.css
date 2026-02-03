@@ -54,7 +54,6 @@ body {
   border-radius: 5px;
 }
 
-.reset-btn,
 .win-message {
   box-shadow: 2px 5px 10px rgba(0, 0, 0, 0.2);
   border: none;
