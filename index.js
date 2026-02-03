@@ -7,7 +7,7 @@ function renderGameContainer() {
       <div>Matched: <span id="matched">0</span>/8</div>
     </div>
     <div class="card-container"></div>
-    <button class="reset-btn">Reset The Game</button>
+    <button class="reset-btn">Reset Game</button>
     <p class="win-message"></p>
   `;
 }
@@ -60,8 +60,8 @@ function createCards() {
 
     card.innerHTML = `
       <div class="card-inner">
-        <div class="front">?</div>
-        <div class="back">${cardsData.value}</div>
+        <div class="front"></div>
+        <div class="back">${letter}</div>
       </div>
     `;
     cardContainer.appendChild(card);
@@ -163,4 +163,18 @@ function timeHandler() {
     timer++;
     document.getElementById("timer").textContent = timer;
   }, 1000);
+}
+// added reset button functionality
+const resetButton = document.querySelector(".reset-btn");
+resetButton.addEventListener("click", resetGame);
+function resetGame() {
+  // Reset game values
+  firstCard = null;
+  secondCard = null;
+  cards = shuffleCards(cards);
+  createCards();
+  document.getElementById("timer").textContent = "0";
+  document.getElementById("moves").textContent = "0";
+  document.getElementById("matched").textContent = "0";
+  document.querySelector(".win-message").textContent = "";
 }
