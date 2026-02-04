@@ -1,180 +1,135 @@
-function renderGameContainer() {
-  const gameContainer = document.getElementById("game-container");
-  gameContainer.innerHTML = `
-    <div class="game-info">
-      <div> Timer: <span id="timer">0</span>s</div>
-      <div>Move: <span id="moves">0</span></div>
-      <div>Matched: <span id="matched">0</span>/8</div>
-    </div>
-    <div class="card-container"></div>
-    <button class="reset-btn">Reset Game</button>
-    <p class="win-message"></p>
-  `;
+const gameContainer = document.getElementById("game-container");
+function renderGamePage() {
+  gameContainer.innerHTML = `<div class="game-info">
+        <span>Time: <b id="time">0</b>s</span>
+        <span>Moves: <b id="moves">0</b></span>
+        <span>Matched: <b id="match">0</b>/8</span>
+        </div>
+        <div class="card-container"></div>
+        <button id="reset-btn">Reset The Game</button>
+        <p id="win-message"></p>`;
 }
-renderGameContainer();
-
-//-- initial game values
+renderGamePage();
+// ====== DATA ======
 const cardsData = [
-  { id: 1, value: "A" },
-  { id: 2, value: "B" },
-  { id: 3, value: "C" },
-  { id: 4, value: "D" },
-  { id: 5, value: "E" },
-  { id: 6, value: "F" },
-  { id: 7, value: "G" },
-  { id: 8, value: "H" },
+  { id: 1, image: "./assets/soccer 1.png", name: "Soccer Ball 1" },
+  { id: 2, image: "./assets/soccer 2.png", name: "Soccer Ball 2" },
+  { id: 3, image: "./assets/soccer 3.png", name: "Soccer Ball 3" },
+  { id: 4, image: "./assets/soccer 4.png", name: "Soccer Ball 4" },
+  { id: 5, image: "./assets/soccer 5.png", name: "Soccer Ball 5" },
+  { id: 6, image: "./assets/soccer 6.png", name: "Soccer Ball 6" },
+  { id: 7, image: "./assets/soccer 7.png", name: "Soccer Ball 7" },
+  { id: 8, image: "./assets/soccer 8.png", name: "Soccer Ball 8" },
 ];
+
+// ====== VARIABLES ======
+const cardContainer = document.querySelector(".card-container");
+const timeEl = document.getElementById("time");
+const movesEl = document.getElementById("moves");
+const matchEl = document.getElementById("match");
+const msg = document.getElementById("win-message");
+const resetBtn = document.getElementById("reset-btn");
+
 let cards = [];
 let firstCard = null;
 let secondCard = null;
+let lock = false;
 let moves = 0;
-let matched = 0;
-let timer = 0;
-let gameTimer = null;
-let lockBoard = false; // for avoid extra clicks
-//--
-function loadCards() {
-  cards = shuffleCards([...cardsData, ...cardsData]);
-}
-//-- making spaghetti of cards
-function shuffleCards(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
+let match = 0;
+let time = 0;
+let timer = null;
 
-//-- creating cards
-function createCards() {
-  const cardContainer = document.querySelector(".card-container");
+// ====== INIT GAME ======
+function startGame() {
   cardContainer.innerHTML = "";
-  loadCards();
-  cards = shuffleCards([...cards]); // randomize card place by every rest
+  cards = shuffleCards([...cardsData, ...cardsData]);
+  moves = match = time = 0;
+  firstCard = secondCard = null;
+  lock = false;
+  timeEl.textContent = movesEl.textContent = matchEl.textContent = 0;
+  msg.textContent = "";
+  clearInterval(timer);
+  timer = null;
 
-  cards.forEach((cardsData) => {
+  cards.forEach((cardData) => {
     const card = document.createElement("div");
     card.className = "card";
-    card.dataset.id = cardsData.id;
-    card.dataset.value = cardsData.value;
+    card.dataset.id = cardData.id;
 
     card.innerHTML = `
-      <div class="card-inner">
-        <div class="front"></div>
-        <div class="back">${letter}</div>
+      <div class="inner">
+        <div class="face front"></div>
+        <div class="face back">
+          <img src="${cardData.image}" alt="${cardData.name}">
+        </div>
       </div>
     `;
+
+    card.addEventListener("click", () => flip(card));
     cardContainer.appendChild(card);
   });
-  addCardClickListeners();
-}
-createCards();
-
-//-- defining click for cards
-function addCardClickListeners() {
-  const gameCards = document.querySelectorAll(".card");
-  gameCards.forEach((card) => {
-    card.addEventListener("click", () => handleCardClick(card));
-  });
 }
 
-//-- handling click for cards
-function handleCardClick(card) {
-  if (!firstCard && !secondCard && !gameTimer) {
-    timeHandler();
+// ====== SHUFFLE ======
+function shuffleCards(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  if (lockBoard) return;
-  if (card.classList.contains("flipped") || card.classList.contains("matched"))
+  return a;
+}
+
+// ====== FLIP CARD ======
+function flip(card) {
+  if (
+    lock ||
+    card === firstCard ||
+    card.classList.contains("flipped") ||
+    card.classList.contains("matched")
+  )
     return;
+
+  if (!timer) {
+    timer = setInterval(() => (timeEl.textContent = ++time), 1000);
+  }
+
   card.classList.add("flipped");
+
   if (!firstCard) {
     firstCard = card;
     return;
   }
-  secondCard = card;
-  lockBoard = true;
-  moves++;
-  document.getElementById("moves").textContent = moves;
 
-  checkCardsForMatch();
+  secondCard = card;
+  lock = true;
+  movesEl.textContent = ++moves;
+
+  setTimeout(check, 700);
 }
 
-// -- checking match cards
-function checkCardsForMatch() {
-  const matchCards = firstCard.dataset.value === secondCard.dataset.value;
-  if (matchCards) {
+// ====== CHECK MATCH ======
+function check() {
+  if (firstCard.dataset.id === secondCard.dataset.id) {
     firstCard.classList.add("matched");
     secondCard.classList.add("matched");
-    matched++;
-    document.getElementById("matched").textContent = matched;
-    resetTurn();
-    if (matched === 8) {
-      clearInterval(gameTimer); // stop timer
-      gameTimer = null;
-      document.querySelector(".win-message").textContent =
-        "You win the game! 🎉";
+    matchEl.textContent = ++match;
+
+    if (match === 8) {
+      clearInterval(timer);
+      msg.textContent = "YOU WIN THE GAME 🎉";
     }
   } else {
-    unMatchedCards();
-  }
-}
-//-- disabling match cards
-
-function disableMatchCards() {
-  firstCard.classList.add("matched");
-  secondCard.classList.add("matched");
-}
-
-//-- back to game unmatched cards
-function unMatchedCards() {
-  lockBoard = true;
-
-  setTimeout(() => {
     firstCard.classList.remove("flipped");
     secondCard.classList.remove("flipped");
+  }
 
-    resetTurn();
-  }, 800);
-}
-
-//-- reset turn
-function resetTurn() {
-  [firstCard, secondCard, lockBoard] = [null, null, false];
-}
-// -- reset Game
-const resetBtn = document.querySelector(".reset-btn");
-
-resetBtn.addEventListener("click", () => {
-  clearInterval(gameTimer);
-  gameTimer = null;
-  moves = 0;
-  matched = 0;
-  timer = 0;
-  document.getElementById("moves").textContent = moves;
-  document.getElementById("matched").textContent = matched;
-  document.getElementById("timer").textContent = timer;
-  document.querySelector(".win-message").textContent = "";
-  createCards();
-});
-
-//-- game timer
-function timeHandler() {
-  gameTimer = setInterval(() => {
-    timer++;
-    document.getElementById("timer").textContent = timer;
-  }, 1000);
-}
-// added reset button functionality
-const resetButton = document.querySelector(".reset-btn");
-resetButton.addEventListener("click", resetGame);
-function resetGame() {
-  // Reset game values
   firstCard = null;
   secondCard = null;
-  cards = shuffleCards(cards);
-  createCards();
-  document.getElementById("timer").textContent = "0";
-  document.getElementById("moves").textContent = "0";
-  document.getElementById("matched").textContent = "0";
-  document.querySelector(".win-message").textContent = "";
+  lock = false;
 }
+
+// ====== RESET ======
+resetBtn.onclick = startGame;
+
+// ====== START GAME ======
+startGame();
